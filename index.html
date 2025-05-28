@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaasSmart Analytics - クリック率分析ダッシュボード</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* カスタムアニメーション */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+            20%, 40%, 60%, 80% { transform: translateX(2px); }
+        }
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.6s ease-out; }
+        
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* ホバー効果 */
+        .hover-lift { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hover-lift:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
+        }
+        
+        .hidden { display: none; }
+        .glass { 
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+    
+    <!-- ログインページ -->
+    <div id="loginPage" class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div class="max-w-md w-full fade-in">
+            <!-- ロゴ・タイトル部分 -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg">
+                    <i data-lucide="bar-chart-3" class="w-10 h-10 text-white"></i>
+                </div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-3">SaasSmart Analytics</h1>
+                <p class="text-gray-600 text-lg">クリック率分析ダッシュボード</p>
+                <div class="mt-4 inline-flex items-center px-4 py-2 bg-blue-50 rounded-full">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                    <span class="text-sm text-blue-700 font-medium">社内専用ツール</span>
+                </div>
+            </div>
+
+            <!-- ログインフォーム -->
+            <div class="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-gray-200/50">
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">ログイン</h2>
+                    <p class="text-gray-600 text-sm">パスワードを入力してアクセスしてください</p>
+                </div>
+
+                <form id="loginForm" class="space-y-6">
+                    <div>
+                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-3">パスワード</label>
+                        <div class="relative">
+                            <i data-lucide="lock" class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                            <input
+                                id="password"
+                                type="password"
+                                class="w-full pl-12 pr-12 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/70 text-lg"
+                                placeholder="パスワードを入力してください"
+                                required
+                            />
+                            <button type="button" id="togglePassword" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                                <i data-lucide="eye" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="errorMessage" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 animate-shake">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
+                            <p class="text-red-700 text-sm font-medium">パスワードが正しくありません</p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        id="loginButton"
+                        class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                        ログイン
+                    </button>
+                </form>
+
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4">
+                        <p class="text-xs text-gray-600 text-center leading-relaxed">
+                            <span class="font-semibold text-gray-800">このツールについて</span><br />
+                            SaasSmartサイトのクリック率分析を行う社内専用ツールです。<br />
+                            Google Analyticsのデータを入力して、ユーザー行動を可視化できます。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フッター -->
+            <div class="mt-8 text-center">
+                <p class="text-xs text-gray-500">© 2024 SaasSmart Analytics. 社内専用ツール</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ダッシュボードページ -->
+    <div id="dashboardPage" class="hidden min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <!-- ヘッダー -->
+        <header class="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-200/50 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-xl mr-3">
+                            <i data-lucide="bar-chart-3" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">SaasSmart Analytics</h1>
+                            <p class="text-xs text-gray-500">クリック率分析ダッシュボード</p>
+                        </div>
+                    </div>
+                    <button id="logoutButton" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200">
+                        <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
+                        ログアウト
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- 説明セクション -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/50 rounded-2xl p-6 mb-8 shadow-sm fade-in">
+                <div class="flex items-start">
+                    <div class="bg-blue-100 p-2 rounded-xl mr-4">
+                        <i data-lucide="info" class="w-5 h-5 text-blue-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-lg font-bold text-blue-900 mb-3">📊 使用方法</h2>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <div class="text-blue-800">
+                                    <p class="font-medium">1. Google Analyticsでデータ確認</p>
+                                    <p class="text-sm text-blue-700">期間を指定して各ページの表示回数を確認</p>
+                                </div>
+                                <div class="text-blue-800">
+                                    <p class="font-medium">2. フォームに数値を入力</p>
+                                    <p class="text-sm text-blue-700">下記フォームに数値を入力してクリック率を計算</p>
+                                </div>
+                            </div>
+                            <div class="bg-white/50 rounded-xl p-4">
+                                <p class="font-semibold text-blue-900 mb-2">📋 タグの説明</p>
+                                <div class="space-y-1 text-sm">
+                                    <p><span class="font-mono bg-gray-100 px-2 py-1 rounded text-xs">/</span> ホーム画面（ルート）</p>
+                                    <p><span class="font-mono bg-gray-100 px-2 py-1 rounded text-xs">/search</span> 検索・クリック後の画面</p>
+                                    <p><span class="font-mono bg-gray-100 px-2 py-1 rounded text-xs">/services</span> 特定サービス詳細画面</p>
+                                    <p><span class="font-mono bg-gray-100 px-2 py-1 rounded text-xs">/service-material/download</span> 資料DL画面</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPIカード -->
+            <div id="kpiCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 hidden">
+                <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 mb-1">ルート画面表示数</p>
+                            <p id="rootViewsDisplay" class="text-3xl font-bold text-gray-900">0</p>
+                            <p class="text-xs text-gray-500 mt-1">総訪問者数</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-xl">
+                            <i data-lucide="eye" class="w-6 h-6 text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 mb-1">ルート→検索率</p>
+                            <p id="searchRateDisplay" class="text-3xl font-bold text-emerald-600">0%</p>
+                            <p class="text-xs text-gray-500 mt-1">検索への遷移</p>
+                        </div>
+                        <div class="bg-emerald-100 p-3 rounded-xl">
+                            <i data-lucide="mouse-pointer" class="w-6 h-6 text-emerald-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 mb-1">ルート→サービス率</p>
+                            <p id="servicesRateDisplay" class="text-3xl font-bold text-purple-600">0%</p>
+                            <p class="text-xs text-gray-500 mt-1">サービス詳細へ</p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-xl">
+                            <i data-lucide="trending-up" class="w-6 h-6 text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 mb-1">ルート→DL率</p>
+                            <p id="downloadRateDisplay" class="text-3xl font-bold text-orange-600">0%</p>
+                            <p class="text-xs text-gray-500 mt-1">最終コンバージョン</p>
+                        </div>
+                        <div class="bg-orange-100 p-3 rounded-xl">
+                            <i data-lucide="calculator" class="w-6 h-6 text-orange-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <!-- データ入力フォーム -->
+                <div class="xl:col-span-1">
+                    <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                        <div class="flex items-center mb-6">
+                            <div class="bg-blue-100 p-2 rounded-xl mr-3">
+                                <i data-lucide="plus" class="w-5 h-5 text-blue-600"></i>
+                            </div>
+                            <h2 class="text-lg font-bold text-gray-900">データ入力</h2>
+                        </div>
+                        
+                        <form id="dataForm" class="space-y-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i data-lucide="calendar" class="w-4 h-4 inline mr-2"></i>
+                                    日付
+                                </label>
+                                <input type="date" id="dateInput" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50" required />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">ルート画面（/）表示数</label>
+                                <input type="number" id="rootViewsInput" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50" placeholder="例: 1,000" required />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">検索画面（/search）表示数</label>
+                                <input type="number" id="searchViewsInput" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/50" placeholder="例: 300" required />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">サービス画面（/services）表示数</label>
+                                <input type="number" id="servicesViewsInput" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white/50" placeholder="例: 150" required />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">ダウンロード画面（/service-material/download）表示数</label>
+                                <input type="number" id="downloadViewsInput" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/50" placeholder="例: 50" required />
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
+                                データを追加
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- チャート -->
+                <div class="xl:col-span-2">
+                    <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6">
+                        <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                            <i data-lucide="bar-chart-3" class="w-5 h-5 mr-2 text-blue-600"></i>
+                            クリック率推移
+                        </h2>
+                        
+                        <div id="chartContainer">
+                            <canvas id="clickRateChart" width="400" height="200"></canvas>
+                        </div>
+                        
+                        <div id="emptyChart" class="flex flex-col items-center justify-center h-64 text-gray-500">
+                            <i data-lucide="bar-chart-3" class="w-16 h-16 text-gray-300 mb-4"></i>
+                            <p class="text-lg font-medium">データを入力するとチャートが表示されます</p>
+                            <p class="text-sm">左側のフォームからデータを追加してください</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- データ履歴テーブル -->
+            <div id="historyTable" class="mt-8 bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-6 hidden">
+                <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                    <i data-lucide="calendar" class="w-5 h-5 mr-2 text-blue-600"></i>
+                    データ履歴
+                </h2>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">日付</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ルート表示数</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ルート→検索率</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ルート→サービス率</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ルート→DL率</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-gray-100">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // データ保存用
+        let clickData = JSON.parse(localStorage.getItem('clickAnalyticsData')) || [];
+        let chart = null;
+
+        // Lucide アイコンの初期化
+        lucide.createIcons();
+
+        // ログイン機能
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (password === 'saasmart') {
+                localStorage.setItem('isAuthenticated', 'true');
+                showDashboard();
+            } else {
+                errorMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    errorMessage.classList.add('hidden');
+                }, 3000);
+            }
+        });
+
+        // パスワード表示切替
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                passwordInput.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        });
+
+        // ログアウト機能
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            localStorage.removeItem('isAuthenticated');
+            showLogin();
+        });
+
+        // データフォーム送信
+        document.getElementById('dataForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newData = {
+                date: document.getElementById('dateInput').value,
+                rootViews: parseInt(document.getElementById('rootViewsInput').value),
+                searchViews: parseInt(document.getElementById('searchViewsInput').value),
+                servicesViews: parseInt(document.getElementById('servicesViewsInput').value),
+                downloadViews: parseInt(document.getElementById('downloadViewsInput').value)
+            };
+
+            clickData.push(newData);
+            clickData.sort((a, b) => new Date(a.date) - new Date(b.date));
+            localStorage.setItem('clickAnalyticsData', JSON.stringify(clickData));
+            
+            // フォームリセット
+            this.reset();
+            
+            // 表示更新
+            updateDisplay();
+        });
+
+        // 表示切替
+        function showLogin() {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('dashboardPage').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('dashboardPage').classList.remove('hidden');
+            updateDisplay();
+        }
+
+        // 表示更新
+        function updateDisplay() {
+            if (clickData.length === 0) {
+                document.getElementById('kpiCards').classList.add('hidden');
+                document.getElementById('historyTable').classList.add('hidden');
+                document.getElementById('emptyChart').classList.remove('hidden');
+                if (chart) {
+                    chart.destroy();
+                    chart = null;
+                }
+                return;
+            }
+
+            const latest = clickData[clickData.length - 1];
+            const searchRate = ((latest.searchViews / latest.rootViews) * 100).toFixed(1);
+            const servicesRate = ((latest.servicesViews / latest.rootViews) * 100).toFixed(1);
+            const downloadRate = ((latest.downloadViews / latest.rootViews) * 100).toFixed(1);
+
+            // KPIカード更新
+            document.getElementById('rootViewsDisplay').textContent = latest.rootViews.toLocaleString();
+            document.getElementById('searchRateDisplay').textContent = searchRate + '%';
+            document.getElementById('servicesRateDisplay').textContent = servicesRate + '%';
+            document.getElementById('downloadRateDisplay').textContent = downloadRate + '%';
+            document.getElementById('kpiCards').classList.remove('hidden');
+
+            // チャート更新
+            updateChart();
+
+            // テーブル更新
+            updateTable();
+        }
+
+        // チャート更新
+        function updateChart() {
+            const ctx = document.getElementById('clickRateChart').getContext('2d');
+            document.getElementById('emptyChart').classList.add('hidden');
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            const chartData = clickData.map(data => ({
+                date: new Date(data.date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }),
+                search: parseFloat(((data.searchViews / data.rootViews) * 100).toFixed(1)),
+                services: parseFloat(((data.servicesViews / data.rootViews) * 100).toFixed(1)),
+                download: parseFloat(((data.downloadViews / data.rootViews) * 100).toFixed(1))
+            }));
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'ルート→検索',
+                            data: chartData.map(d => d.search),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'ルート→サービス',
+                            data: chartData.map(d => d.services),
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'ルート→ダウンロード',
+                            data: chartData.map(d => d.download),
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // テーブル更新
+        function updateTable() {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            clickData.forEach(data => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50/50 transition-colors duration-150';
+                
+                const searchRate = ((data.searchViews / data.rootViews) * 100).toFixed(1);
+                const servicesRate = ((data.servicesViews / data.rootViews) * 100).toFixed(1);
+                const downloadRate = ((data.downloadViews / data.rootViews) * 100).toFixed(1);
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ${new Date(data.date).toLocaleDateString('ja-JP')}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${data.rootViews.toLocaleString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-emerald-600">
+                        ${searchRate}%
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-purple-600">
+                        ${servicesRate}%
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-orange-600">
+                        ${downloadRate}%
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('historyTable').classList.remove('hidden');
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            if (isAuthenticated) {
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        });
+    </script>
+</body>
+</html> 
