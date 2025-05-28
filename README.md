@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SaasSmart Analytics - クリック率分析ダッシュボード
 
-## Getting Started
+SaasSmartサイトのクリック率を分析・可視化する専用ツールです。Google Analyticsから取得したデータを手動で入力し、ルート画面（ホーム）からの各ページへのクリック率を計算・表示します。
 
-First, run the development server:
+## 🎯 目的
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- SaasSmartサイトの本質的なユーザー行動を分析
+- ログイン画面を除外した真のクリック率を計算
+- データの推移を可視化して改善点を発見
+
+## 🚀 機能
+
+### 📊 クリック率分析
+- **ルート→検索率**: ホーム画面から検索画面への遷移率
+- **ルート→サービス率**: ホーム画面からサービス詳細への遷移率  
+- **ルート→ダウンロード率**: ホーム画面から資料ダウンロードまでの遷移率
+
+### 📈 データ可視化
+- KPIカードでの主要指標表示
+- 時系列チャートでの推移表示
+- データ履歴テーブル
+
+### 🔐 セキュリティ
+- パスワード認証（社内専用）
+- ローカルストレージでのデータ保存
+
+## 🏗️ 技術スタック
+
+- **フロントエンド**: Next.js 15 + TypeScript
+- **スタイリング**: Tailwind CSS
+- **チャート**: Recharts
+- **アイコン**: Lucide React
+- **デプロイ**: Vercel（予定）
+
+## 📋 使用方法
+
+### 1. ログイン
+- パスワード: `saasmart`
+
+### 2. データ入力
+1. Google Analyticsで期間を指定
+2. 各ページの表示回数を確認
+3. フォームに数値を入力
+
+### 3. 分析対象ページ
+| タグ | 説明 |
+|------|------|
+| `/` | ホーム画面（ルート） |
+| `/search` | 検索・クリック後の画面 |
+| `/services` | 特定サービス詳細画面 |
+| `/service-material/download` | 資料ダウンロード画面 |
+
+### 4. 計算式
+```
+クリック率 = (遷移先ページ表示数 ÷ ルート画面表示数) × 100
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ 開発環境セットアップ
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 前提条件
+- Node.js 18以上
+- npm または yarn
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### インストール
+```bash
+# リポジトリをクローン
+git clone <repository-url>
+cd click-rate-analyzer
 
-## Learn More
+# 依存関係をインストール
+npm install
 
-To learn more about Next.js, take a look at the following resources:
+# 開発サーバーを起動
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 利用可能なスクリプト
+```bash
+npm run dev      # 開発サーバー起動
+npm run build    # プロダクションビルド
+npm run start    # プロダクションサーバー起動
+npm run lint     # ESLintチェック
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📁 プロジェクト構造
 
-## Deploy on Vercel
+```
+click-rate-analyzer/
+├── src/
+│   └── app/
+│       ├── login/          # ログインページ
+│       ├── dashboard/      # メインダッシュボード
+│       ├── layout.tsx      # 共通レイアウト
+│       ├── page.tsx        # ルートページ
+│       └── globals.css     # グローバルスタイル
+├── public/                 # 静的ファイル
+├── package.json           # 依存関係
+├── tailwind.config.js     # Tailwind設定
+└── README.md              # このファイル
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔮 今後の拡張予定
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### AWS統合
+- **Lambda**: サーバー監視機能
+- **SNS**: アラート通知
+- **CloudWatch**: ログ監視
+
+### 機能追加
+- Google Analytics API連携
+- データエクスポート機能
+- より詳細な分析レポート
+
+## 📝 ライセンス
+
+このプロジェクトは社内専用ツールです。
+
+## 👥 開発者
+
+- **開発**: Aki
+- **目的**: AWS + Next.js + GitHub を使った完全な開発・運用体験
+
+---
+
+**注意**: このツールは機密情報を扱うため、適切なセキュリティ対策を講じて使用してください。
